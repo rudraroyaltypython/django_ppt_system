@@ -1,42 +1,51 @@
-<!doctype html>
-<html>
+{# presenter/templates/impress_presentation.html #}
+{% extends "base.html" %}
+{% block title %}{{ presentation.topic }} - 3D{% endblock %}
+{% block head_extra %}
+<link href="https://cdn.jsdelivr.net/npm/impress.js/css/impress-demo.css" rel="stylesheet">
+<style>
+    body {
+        background: radial-gradient(circle, #003049, #001827);
+        color: var(--cream);
+    }
 
-<head>
-    <meta charset="utf-8" />
-    <title>{{ presentation.topic }} - 3D View</title>
-    <link href="https://cdn.jsdelivr.net/npm/impress.js/css/impress-demo.css" rel="stylesheet">
-    <style>
-        .step {
-            width: 600px;
-            padding: 40px;
-            background: rgba(0, 0, 0, 0.75);
-            color: white;
-            border-radius: 20px;
-            box-shadow: 0 0 30px #000;
-        }
+    .step {
+        width: 700px;
+        padding: 36px;
+        border-radius: 16px;
+        background: var(--card-bg);
+        color: var(--navy);
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45)
+    }
 
-        body {
-            background: #001f3f;
-        }
-    </style>
-</head>
+    .step h2 {
+        color: var(--dark-red);
+        margin-bottom: 12px
+    }
 
-<body>
+    .small {
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.95rem
+    }
+</style>
+{% endblock %}
 
-    <div id="impress">
-        {% for slide in slides %}
-        <div class="step" data-x="{{ slide.x }}" data-y="{{ slide.y }}">
-            <h2>{{ slide.title }}</h2>
-            <p>{{ slide.content|linebreaksbr }}</p>
-        </div>
-        {% endfor %}
+{% block content %}
+<div id="impress">
+    {% for slide in slides %}
+    <div class="step" data-x="{{ slide.x }}" data-y="{{ slide.y }}">
+        <h2>{{ slide.title }}</h2>
+        <div class="slide-body">{{ slide.content|safe }}</div>
     </div>
+    {% endfor %}
+</div>
+<div id="hint"
+    style="position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:rgba(0,0,0,0.35);padding:8px 12px;border-radius:10px;color:var(--cream)">
+    Use arrow keys / space</div>
+{% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/impress.js/js/impress.js"></script>
-    <script>
-        impress().init();
-    </script>
-
-</body>
-
-</html>
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/impress.js/js/impress.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script> mermaid.initialize({ startOnLoad: true }); impress().init(); </script>
+{% endblock %}

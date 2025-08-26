@@ -1,0 +1,180 @@
+{# presenter/templates/base.html #}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Django PPT System{% endblock %}</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <style>
+        :root {
+            --dark-red: #780000;
+            --red: #c1121f;
+            --cream: #fdf0d5;
+            --navy: #003049;
+            --light: #669bbc;
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        [data-theme="dark"] {
+            --card-bg: rgba(0, 0, 0, 0.6);
+            --bg-start: #001827;
+            --bg-end: #001425;
+            color: var(--cream);
+        }
+
+        [data-theme="light"] {
+            --bg-start: #fdf0d5;
+            --bg-end: #e6f2f7;
+            color: var(--navy);
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Segoe UI, Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start, #fdf0d5), var(--bg-end, #669bbc));
+        }
+
+        header.appbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: linear-gradient(90deg, var(--dark-red), var(--red));
+            color: var(--cream);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .controls input[type=text] {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: none;
+            min-width: 160px;
+        }
+
+        .btn {
+            background: var(--light);
+            color: var(--navy);
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .score-bubble {
+            background: var(--cream);
+            color: var(--navy);
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        footer {
+            padding: 16px;
+            text-align: center;
+            color: rgba(0, 0, 0, 0.5)
+        }
+
+        main {
+            padding: 28px;
+            min-height: calc(100vh - 128px);
+        }
+    </style>
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+    <header class="appbar">
+        <div class="brand">📊 Django Presentation System</div>
+        <div class="controls">
+            <label style="color:inherit;font-weight:600;margin-right:6px">Name</label>
+            <input id="participant_name" type="text" placeholder="Your name (for points)">
+            <div id="score" class="score-bubble">0 pts</div>
+            <button id="theme_toggle" class="btn">Dark</button>
+            <a href="{% url 'home' %}" class="btn">Home</a>
+            <a id="leaderboard_link" href="{% url 'presentation' 0 %}" class="btn" style="display:none">Leaderboard</a>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        Built with ❤️ • colors: #780000, #c1121f, #fdf0d5, #003049, #669bbc
+    </footer>
+
+    <script>
+        // theme toggle + persistence
+        (function () {
+            const root = document.documentElement;
+            const toggle = document.getElementById('theme_toggle');
+            const stored = localStorage.getItem('ppt_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', stored);
+            toggle.textContent = stored === 'dark' ? 'Light' : 'Dark';
+            toggle.addEventListener('click', () => {
+                const cur = document.documentElement.getAttribute('data-theme') || 'light';
+                const next = cur === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('ppt_theme', next);
+                toggle.textContent = next === 'dark' ? 'Light' : 'Dark';
+            });
+        })();
+
+        // participant name + local score
+        (function () {
+            const nameEl = document.getElementById('participant_name');
+            const scoreEl = document.getElementById('score');
+            const savedName = localStorage.getItem('ppt_participant') || '';
+            const savedScore = parseInt(localStorage.getItem('ppt_points') || '0', 10) || 0;
+            nameEl.value = savedName;
+            scoreEl.textContent = `${savedScore} pts`;
+
+            nameEl.addEventListener('change', () => {
+                localStorage.setItem('ppt_participant', nameEl.value.trim());
+            });
+
+            // helper available for pages to update score
+            window.__ppt = window.__ppt || {};
+            window.__ppt.getParticipant = () => nameEl.value.trim() || 'Guest';
+            window.__ppt.addPoints = async (points, presentationId) => {
+                const prev = parseInt(localStorage.getItem('ppt_points') || '0', 10) || 0;
+                const now = prev + (points || 0);
+                localStorage.setItem('ppt_points', now);
+                scoreEl.textContent = `${now} pts`;
+                // optionally POST to server
+                const name = window.__ppt.getParticipant();
+                try {
+                    await fetch("{% url 'api_submit_score' %}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, points, presentation: presentationId })
+                    });
+                } catch (e) { }
+                return now;
+            };
+        })();
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

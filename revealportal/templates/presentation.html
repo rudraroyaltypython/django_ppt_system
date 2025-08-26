@@ -1,61 +1,260 @@
-<!doctype html>
-<html>
+{% extends "base.html" %}
+{% block title %}{{ presentation.topic }}{% endblock %}
 
-<head>
-    <meta charset="utf-8">
-    <title>{{ presentation.topic }}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block head_extra %}
+<!-- Reveal css -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/theme/white.css">
+<style>
+    .reveal .slides section {
+        border-radius: 14px;
+        padding: 28px;
+        background: var(--card-bg);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
 
-    <!-- Reveal.js core -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/theme/solarized.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/highlight/monokai.css">
+    .code-runner {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+    }
 
-    <style>
-        body {
-            margin: 0;
-            background: #f0f0f0;
-        }
+    .code-runner textarea {
+        width: 100%;
+        height: 130px;
+        border-radius: 10px;
+        padding: 10px;
+        font-family: monospace;
+    }
 
-        h2 {
-            color: #2c3e50;
-        }
-    </style>
-</head>
+    .code-out {
+        white-space: pre-wrap;
+        background: var(--navy);
+        color: var(--cream);
+        padding: 10px;
+        border-radius: 10px;
+        margin-top: 8px;
+        min-height: 40px;
+        font-family: monospace;
+    }
 
-<body>
+    .quiz button {
+        margin: 6px 6px 6px 0;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+    }
 
-    <div class="reveal">
-        <div class="slides">
-            {% for slide in slides %}
-            <section>
-                <h2>{{ slide.title }}</h2>
-                <p>{{ slide.content|linebreaksbr }}</p>
-                {% if slide.code_snippet %}
-                <pre><code class="language-js">{{ slide.code_snippet }}</code></pre>
-                {% endif %}
-            </section>
-            {% endfor %}
+    .quiz .correct {
+        background: var(--light);
+        color: var(--navy);
+    }
 
-            <!-- Link to Impress.js version -->
-            <section>
-                <h2>🚀 Want to explore the 3D journey?</h2>
-                <p><a href="{% url 'impress_presentation' presentation.id %}" target="_blank">Click here for the
-                        Impress.js version</a></p>
-            </section>
-        </div>
+    .quiz .wrong {
+        background: #ddd;
+        color: #333;
+    }
+
+    .run-btn {
+        background: var(--dark-red);
+        color: var(--cream);
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .small {
+        font-size: 0.9rem;
+        color: rgba(0, 0, 0, 0.55);
+        margin-top: 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reveal">
+    <div class="slides">
+        {% for slide in slides %}
+        <section>
+            <h2>{{ slide.title }}</h2>
+
+            <div class="slide-body">
+                {{ slide.content|safe }}
+            </div>
+
+            {% if slide.code_snippet %}
+            <div class="code-runner">
+                <div style="flex:1">
+                    <textarea id="editor-{{ forloop.counter }}"
+                        class="py-editor">{{ slide.code_snippet|escape }}</textarea>
+                    <div class="small">Edit code then press <strong>Run</strong>. Python runs in your browser (Pyodide).
+                    </div>
+                </div>
+                <div style="width:180px;display:flex;flex-direction:column;align-items:stretch">
+                    <button class="run-btn" data-target="out-{{ forloop.counter }}">Run</button>
+                    <button class="btn" onclick="copyCode('editor-{{forloop.counter}}')">Copy</button>
+                    <button class="btn" onclick="addSamplePoints(1)">+1 pt</button>
+                </div>
+            </div>
+            <pre id="out-{{ forloop.counter }}" class="code-out">Output will appear here...</pre>
+            {% endif %}
+        </section>
+        {% endfor %}
+
+        <section>
+            <h2>🏁 Session Controls</h2>
+            <p class="small">Use the controls here to view the leaderboard or reset your local points.</p>
+            <button class="btn" onclick="showLeaderboard()">Show Leaderboard (panel)</button>
+            <button class="btn" onclick="resetLocalPoints()">Reset Local Points</button>
+        </section>
     </div>
+</div>
 
-    <!-- Reveal.js scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/highlight/highlight.js"></script>
-    <script>
-        Reveal.initialize({
-            hash: true,
-            plugins: [RevealHighlight]
-        });
-    </script>
+<!-- leaderboard modal -->
+<div id="leaderboard_modal"
+    style="position:fixed;right:20px;top:80px;background:var(--card-bg);padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.26);display:none;min-width:260px;z-index:999;">
+    <h3 style="margin:4px 0 10px 0">Leaderboard</h3>
+    <div id="leaderboard_list">Loading…</div>
+    <div style="text-align:right;margin-top:8px"><button class="btn" onclick="closeLeaderboard()">Close</button></div>
+</div>
+{% endblock %}
 
-</body>
+{% block scripts %}
+<!-- Reveal + highlight -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/highlight/highlight.js"></script>
 
-</html>
+<!-- Pyodide (Python in browser) -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+
+<!-- Mermaid for diagrams -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+<script>
+    // Reveal initialization
+    Reveal.initialize({
+        hash: true,
+        plugins: [RevealHighlight],
+        slideNumber: true,
+        transition: 'convex',
+        backgroundTransition: 'zoom'
+    });
+
+    // Mermaid init
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.mermaid) {
+            mermaid.initialize({ startOnLoad: false });
+            document.querySelectorAll('.mermaid').forEach((el) => {
+                try { mermaid.init(undefined, el); } catch (e) { console.warn(e); }
+            });
+        }
+    });
+
+    // Pyodide loader
+    let pyodideReady = false;
+    let pyodide = null;
+    (async () => {
+        try {
+            pyodide = await loadPyodide();
+            pyodideReady = true;
+            console.log('Pyodide loaded');
+        } catch (err) {
+            console.error('Pyodide failed to load', err);
+        }
+    })();
+
+    // Copy helper
+    function copyCode(id) {
+        const t = document.getElementById(id);
+        if (!t) return;
+        t.select(); document.execCommand('copy');
+        alert('Copied to clipboard');
+    }
+
+    // Award manual points
+    function addSamplePoints(n) {
+        const presId = "{{ presentation.id }}";
+        window.__ppt.addPoints(n, presId);
+    }
+
+    // Run button listener
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.run-btn');
+        if (!btn) return;
+        const target = btn.getAttribute('data-target');
+        const out = document.getElementById(target);
+        const editor = btn.closest('.code-runner').querySelector('textarea');
+        if (!editor) { out.textContent = 'No editor found'; return; }
+        const code = editor.value;
+        out.textContent = 'Running...';
+        if (!pyodideReady) { out.textContent = 'Python engine still loading — try again in a moment.'; return; }
+        try {
+            let result = await pyodide.runPythonAsync(code);
+            out.textContent = String(result === undefined ? 'Done (no result)' : result);
+            const presId = "{{ presentation.id }}";
+            await window.__ppt.addPoints(2, presId);
+        } catch (err) {
+            out.textContent = 'Error: ' + err;
+        }
+    });
+
+    // Quiz handling
+    document.addEventListener('click', async function (e) {
+        const qbtn = e.target.closest('.quiz button');
+        if (!qbtn) return;
+        const quiz = qbtn.closest('.quiz');
+        const chosen = qbtn.getAttribute('data-choice');
+        const correct = quiz.getAttribute('data-correct');
+        const points = parseInt(quiz.getAttribute('data-points') || '5', 10);
+        if (chosen === correct) {
+            qbtn.classList.add('correct');
+            const presId = "{{ presentation.id }}";
+            await window.__ppt.addPoints(points, presId);
+            const fb = document.createElement('div');
+            fb.textContent = `✅ Correct — +${points} pts`;
+            fb.style.marginTop = '8px';
+            quiz.appendChild(fb);
+        } else {
+            qbtn.classList.add('wrong');
+            const fb = document.createElement('div');
+            fb.textContent = `❌ Wrong — correct: ${correct}`;
+            fb.style.marginTop = '8px';
+            quiz.appendChild(fb);
+        }
+        quiz.querySelectorAll('button').forEach(b => b.disabled = true);
+    });
+
+    // Leaderboard
+    async function showLeaderboard() {
+        const panel = document.getElementById('leaderboard_modal');
+        panel.style.display = 'block';
+        const list = document.getElementById('leaderboard_list');
+        list.textContent = 'Loading...';
+        try {
+            const res = await fetch("{% url 'api_leaderboard_presentation' presentation.id %}");
+            const data = await res.json();
+            const rows = data.leaderboard;
+            if (!rows.length) {
+                list.innerHTML = '<div style="color:gray">No scores yet</div>';
+                return;
+            }
+            list.innerHTML = rows.map(r => `<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.06)"><strong>${r.name}</strong> — ${r.points} pts</div>`).join('');
+        } catch (e) {
+            list.textContent = 'Failed to load leaderboard';
+        }
+    }
+
+    function closeLeaderboard() {
+        document.getElementById('leaderboard_modal').style.display = 'none';
+    }
+
+    function resetLocalPoints() {
+        localStorage.setItem('ppt_points', '0');
+        const scoreEl = document.getElementById('score');
+        if (scoreEl) scoreEl.textContent = '0 pts';
+    }
+</script>
+{% endblock %}
