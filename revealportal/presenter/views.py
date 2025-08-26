@@ -18,19 +18,18 @@ def home(request):
 
 
 def presentation_view(request, id):
-    """Reveal.js style presentation view"""
     presentation = get_object_or_404(Presentation, id=id)
-    slides = presentation.slide_set.order_by('slide_order')
-    return render(request, 'presentation.html', {
-        'presentation': presentation,
-        'slides': slides
+    slides = presentation.slides.order_by("slide_order")
+    return render(request, "presentation.html", {
+        "presentation": presentation,
+        "slides": slides,
     })
 
 
 def impress_presentation_view(request, id):
     """Impress.js style 3D presentation view"""
     presentation = get_object_or_404(Presentation, id=id)
-    slides = presentation.slide_set.order_by('slide_order')
+    slides = presentation.slides.order_by('slide_order')
 
     # generate positions for each slide
     slide_data = []

@@ -6,8 +6,9 @@ from .models import Presentation, Slide, Participant, Score
 class SlideInline(admin.TabularInline):
     model = Slide
     extra = 1
-    fields = ("title", "slide_order", "code_snippet")
+    fields = ("title", "content", "code_snippet", "slide_order")
     ordering = ("slide_order",)
+
 
 
 class PresentationAdmin(admin.ModelAdmin):
