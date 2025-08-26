@@ -14,11 +14,13 @@
             --cream: #fdf0d5;
             --navy: #003049;
             --light: #669bbc;
-            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-bg: rgba(255, 255, 255, 0.2);
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.3);
         }
 
         [data-theme="dark"] {
-            --card-bg: rgba(0, 0, 0, 0.6);
+            --card-bg: rgba(0, 0, 0, 0.4);
             --bg-start: #001827;
             --bg-end: #001425;
             color: var(--cream);
@@ -34,8 +36,25 @@
         body {
             height: 100%;
             margin: 0;
-            font-family: Segoe UI, Arial, sans-serif;
-            background: linear-gradient(135deg, var(--bg-start, #fdf0d5), var(--bg-end, #669bbc));
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+            background-size: 300% 300%;
+            animation: bgShift 15s ease infinite;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        @keyframes bgShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         header.appbar {
@@ -43,14 +62,17 @@
             align-items: center;
             justify-content: space-between;
             padding: 14px 20px;
-            background: linear-gradient(90deg, var(--dark-red), var(--red));
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
             color: var(--cream);
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
         }
 
         .brand {
-            font-weight: 700;
-            font-size: 1.15rem;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
         }
 
         .controls {
@@ -64,37 +86,96 @@
             border-radius: 8px;
             border: none;
             min-width: 160px;
+            outline: none;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .controls input[type=text]:focus {
+            box-shadow: 0 0 8px var(--light);
         }
 
         .btn {
             background: var(--light);
             color: var(--navy);
-            padding: 8px 12px;
-            border-radius: 8px;
+            padding: 8px 14px;
+            border-radius: 10px;
             text-decoration: none;
             font-weight: 600;
             border: none;
             cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
         }
 
         .score-bubble {
             background: var(--cream);
             color: var(--navy);
-            padding: 6px 10px;
+            padding: 6px 14px;
             border-radius: 999px;
             font-weight: 700;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transition: transform 0.25s ease;
+        }
+
+        .score-bubble.pulse {
+            animation: pulse 0.6s ease;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            40% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         footer {
             padding: 16px;
             text-align: center;
-            color: rgba(0, 0, 0, 0.5)
+            font-size: 0.9rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(6px);
+            border-top: 1px solid var(--glass-border);
+            color: rgba(255, 255, 255, 0.6);
         }
 
         main {
             padding: 28px;
             min-height: calc(100vh - 128px);
+            transition: color 0.4s ease;
+        }
+
+        .light {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        /* 🌙 Dark Theme */
+        .dark {
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        /* 🌅 Solarized Theme */
+        .solarized {
+            background: #fdf6e3;
+            color: #657b83;
+        }
+
+        /* 🌿 Forest Theme */
+        .forest {
+            background: #1b4332;
+            color: #d8f3dc;
         }
     </style>
 
@@ -103,12 +184,28 @@
 
 <body>
     <header class="appbar">
-        <div class="brand">📊 Django Presentation System</div>
+        {% if branding.logo %}
+        <img src="{{ branding.logo.url }}" alt="{{ branding.site_name }}" height="40">
+        {% endif %}
+        <h1>{{ branding.site_name }}</h1>
         <div class="controls">
             <label style="color:inherit;font-weight:600;margin-right:6px">Name</label>
             <input id="participant_name" type="text" placeholder="Your name (for points)">
             <div id="score" class="score-bubble">0 pts</div>
-            <button id="theme_toggle" class="btn">Dark</button>
+            <div style="margin:10px 0; display:flex; align-items:center; gap:15px;">
+                <label for="themeSelector">Theme:</label>
+                <select id="themeSelector">
+                    <option value="light">🌞 Light</option>
+                    <option value="dark">🌙 Dark</option>
+                    <option value="solarized">🌅 Solarized</option>
+                    <option value="forest">🌿 Forest</option>
+                </select>
+
+                <!-- Contrast Slider -->
+                <label for="contrastRange">Contrast:</label>
+                <input type="range" id="contrastRange" min="50" max="200" value="100">
+            </div>
+
             <a href="{% url 'home' %}" class="btn">Home</a>
             <a id="leaderboard_link" href="{% url 'presentation' 0 %}" class="btn" style="display:none">Leaderboard</a>
         </div>
@@ -123,17 +220,43 @@
     </footer>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const themeSelector = document.getElementById("themeSelector");
+            const contrastSlider = document.getElementById("contrastRange");
+
+            // 🎨 Load last saved theme
+            const savedTheme = localStorage.getItem("theme") || "light";
+            document.body.classList.add(savedTheme);
+            themeSelector.value = savedTheme;
+
+            // 🌈 Change theme
+            themeSelector.addEventListener("change", function () {
+                document.body.className = ""; // reset
+                document.body.classList.add(this.value);
+                localStorage.setItem("theme", this.value);
+            });
+
+            // 🎚 Contrast Slider
+            contrastSlider.addEventListener("input", function () {
+                document.body.style.filter = `contrast(${this.value}%)`;
+            });
+        });
+    </script>
+
+
+    <script>
         // theme toggle + persistence
         (function () {
             const root = document.documentElement;
             const toggle = document.getElementById('theme_toggle');
             const stored = localStorage.getItem('ppt_theme') || 'light';
-            document.documentElement.setAttribute('data-theme', stored);
+            root.setAttribute('data-theme', stored);
             toggle.textContent = stored === 'dark' ? 'Light' : 'Dark';
+
             toggle.addEventListener('click', () => {
-                const cur = document.documentElement.getAttribute('data-theme') || 'light';
+                const cur = root.getAttribute('data-theme') || 'light';
                 const next = cur === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', next);
+                root.setAttribute('data-theme', next);
                 localStorage.setItem('ppt_theme', next);
                 toggle.textContent = next === 'dark' ? 'Light' : 'Dark';
             });
@@ -160,7 +283,9 @@
                 const now = prev + (points || 0);
                 localStorage.setItem('ppt_points', now);
                 scoreEl.textContent = `${now} pts`;
-                // optionally POST to server
+                scoreEl.classList.add("pulse");
+                setTimeout(() => scoreEl.classList.remove("pulse"), 600);
+
                 const name = window.__ppt.getParticipant();
                 try {
                     await fetch("{% url 'api_submit_score' %}", {

@@ -1,5 +1,15 @@
 # presenter/models.py
 from django.db import models
+from tinymce.models import HTMLField   # 👈 import TinyMCE HTMLField
+from ckeditor.fields import RichTextField
+
+
+class Branding(models.Model):
+    site_name = models.CharField(max_length=100, default="Django Presentation System")
+    logo = models.ImageField(upload_to="branding/", blank=True, null=True)
+
+    def __str__(self):
+        return self.site_name
 
 
 class Presentation(models.Model):
@@ -18,10 +28,10 @@ class Slide(models.Model):
     presentation = models.ForeignKey(
         Presentation,
         on_delete=models.CASCADE,
-        related_name="slides"   # 👈 important for cleaner access
+        related_name="slides"
     )
     title = models.CharField(max_length=200)
-    content = models.TextField()
+    content = RichTextField()   # 👈 changed from TextField → HTMLField
     code_snippet = models.TextField(blank=True, null=True)
     slide_order = models.PositiveIntegerField(default=0)
 
