@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{ presentation.topic }} - 3D View</title>
+    <link href="https://cdn.jsdelivr.net/npm/impress.js/css/impress-demo.css" rel="stylesheet">
+    <style>
+        .step {
+            width: 600px;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            border-radius: 20px;
+            box-shadow: 0 0 30px #000;
+        }
+
+        body {
+            background: #001f3f;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="impress">
+        {% for slide in slides %}
+        <div class="step" data-x="{{ slide.x }}" data-y="{{ slide.y }}">
+            <h2>{{ slide.title }}</h2>
+            <p>{{ slide.content|linebreaksbr }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/impress.js/js/impress.js"></script>
+    <script>
+        impress().init();
+    </script>
+
+</body>
+
+</html>

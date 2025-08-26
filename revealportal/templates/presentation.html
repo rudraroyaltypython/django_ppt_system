@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>{{ presentation.topic }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Reveal.js core -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/theme/solarized.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/highlight/monokai.css">
+
+    <style>
+        body {
+            margin: 0;
+            background: #f0f0f0;
+        }
+
+        h2 {
+            color: #2c3e50;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="reveal">
+        <div class="slides">
+            {% for slide in slides %}
+            <section>
+                <h2>{{ slide.title }}</h2>
+                <p>{{ slide.content|linebreaksbr }}</p>
+                {% if slide.code_snippet %}
+                <pre><code class="language-js">{{ slide.code_snippet }}</code></pre>
+                {% endif %}
+            </section>
+            {% endfor %}
+
+            <!-- Link to Impress.js version -->
+            <section>
+                <h2>🚀 Want to explore the 3D journey?</h2>
+                <p><a href="{% url 'impress_presentation' presentation.id %}" target="_blank">Click here for the
+                        Impress.js version</a></p>
+            </section>
+        </div>
+    </div>
+
+    <!-- Reveal.js scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4/plugin/highlight/highlight.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            plugins: [RevealHighlight]
+        });
+    </script>
+
+</body>
+
+</html>

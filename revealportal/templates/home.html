@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>All Presentations</title>
+</head>
+
+<body>
+    <h1>📚 Available Presentations</h1>
+    <ul>
+        {% for pres in presentations %}
+        <li>
+            <a href="{% url 'presentation' pres.id %}">{{ pres.topic }}</a> |
+            <a href="{% url 'impress_presentation' pres.id %}">3D View</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+
+</html>
